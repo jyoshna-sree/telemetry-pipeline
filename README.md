@@ -145,21 +145,19 @@ REST API for querying telemetry data with auto-generated Swagger documentation:
 
 ## Quick Start
 
-### Build the Project
+### Make Commands
 
-```bash
-make buildproject
-```
-
-This single command will:
-- Install Go dependencies
-- Generate Swagger documentation
-- Build all binaries (`bin/api`, `bin/mq-server`, `bin/streamer`, `bin/collector`)
-- Build all Docker images
+| Command | What it does |
+|---------|--------------|
+| `make build` | Build Go binaries |
+| `make docker-build` | Build Docker images |
+| `make k8s-deploy` | Deploy to Kubernetes |
+| `make k8s-delete` | Delete from Kubernetes |
+| `make test` | Run tests |
+| `make coverage` | Run tests with coverage |
+| `make clean` | Remove build artifacts |
 
 ### Run with Docker Compose
-
-After building, start all services:
 
 ```bash
 docker-compose up -d
@@ -270,13 +268,7 @@ curl "http://localhost:8080/api/v1/gpus/GPU-abc123/telemetry?start_time=2025-07-
 
 ## Testing
 
-```bash
-# Run all tests
-make test
-
-# Generate coverage report
-make coverage
-```
+Run tests with `make test` or `make coverage` (see Make Commands table above).
 
 ---
 

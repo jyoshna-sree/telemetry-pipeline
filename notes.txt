@@ -1,0 +1,6 @@
+& "$env:USERPROFILE\kind.exe" get clusters
+& "$env:USERPROFILE\kind.exe" load docker-image gpu-telemetry-pipeline/api:1.0.0 gpu-telemetry-pipeline/mq-server:1.0.0 gpu-telemetry-pipeline/streamer:1.0.0 gpu-telemetry-pipeline/collector:1.0.0 --name gpu-telemetry
+
+The file is too large for a ConfigMap. I'll use a different approach - copy the file directly into the KIND cluster node and mount it as a hostPath:
+
+docker cp dcgm_metrics_20250718_134233.csv gpu-telemetry-control-plane:/tmp/dcgm_metrics.csv

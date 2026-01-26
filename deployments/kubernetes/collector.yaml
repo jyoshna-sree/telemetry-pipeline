@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+  namespace: gpu-telemetry
+  labels:
+    app: collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collector
+  template:
+    metadata:
+      labels:
+        app: collector
+    spec:
+      containers:
+        - name: collector
+          image: gpu-telemetry-pipeline/collector:1.0.0
+          env:
+            - name: MQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_HOST
+            - name: MQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_PORT
+            - name: COLLECTOR_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: INFLUXDB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_URL
+            - name: INFLUXDB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gpu-telemetry-secret
+                  key: INFLUXDB_TOKEN
+            - name: INFLUXDB_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_ORG
+            - name: INFLUXDB_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_BUCKET
+            - name: FLUSH_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: FLUSH_INTERVAL

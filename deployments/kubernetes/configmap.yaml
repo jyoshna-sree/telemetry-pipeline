@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-telemetry-config
+  namespace: gpu-telemetry
+data:
+  # InfluxDB settings
+  INFLUXDB_URL: "http://influxdb:8086"
+  INFLUXDB_ORG: "cisco"
+  INFLUXDB_BUCKET: "gpu_telemetry"
+  
+  # MQ settings
+  MQ_HOST: "mq-server"
+  MQ_PORT: "9000"
+  
+  # API settings
+  GIN_MODE: "release"
+  STORAGE_TYPE: "influxdb"
+  MAX_PAGE_SIZE: "1000"
+  
+  # Streamer settings
+  BATCH_SIZE: "100"
+  COLLECT_INTERVAL: "5s"
+  CSV_PATH: "/data/dcgm_metrics.csv"
+  
+  # Collector settings
+  FLUSH_INTERVAL: "10s"

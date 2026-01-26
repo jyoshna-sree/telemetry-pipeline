@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemetry-csv-data
+  namespace: gpu-telemetry
+data:
+  dcgm_metrics.csv: |
+    timestamp,metric_name,gpu_id,device,uuid,modelname,hostname,container,pod,namespace,value,labels_raw
+    2026-01-26T10:00:00Z,DCGM_FI_DEV_GPU_TEMP,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,45.5,
+    2026-01-26T10:00:01Z,DCGM_FI_DEV_GPU_TEMP,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,46.2,
+    2026-01-26T10:00:02Z,DCGM_FI_DEV_POWER_USAGE,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,120.3,
+    2026-01-26T10:00:03Z,DCGM_FI_DEV_POWER_USAGE,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,122.1,
+    2026-01-26T10:00:04Z,DCGM_FI_DEV_FB_USED,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,4096,
+    2026-01-26T10:00:05Z,DCGM_FI_DEV_FB_USED,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,4200,
+    2026-01-26T10:00:06Z,DCGM_FI_DEV_GPU_UTIL,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,75.2,
+    2026-01-26T10:00:07Z,DCGM_FI_DEV_GPU_UTIL,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,78.5,
+    2026-01-26T10:00:08Z,DCGM_FI_DEV_MEM_COPY_UTIL,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,50.0,
+    2026-01-26T10:00:09Z,DCGM_FI_DEV_MEM_COPY_UTIL,0,nvidia0,GPU-abc123,NVIDIA A100,node01,container1,pod1,default,51.3,

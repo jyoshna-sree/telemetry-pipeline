@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamer
+  namespace: gpu-telemetry
+  labels:
+    app: streamer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamer
+  template:
+    metadata:
+      labels:
+        app: streamer
+    spec:
+      containers:
+        - name: streamer
+          image: gpu-telemetry-pipeline/streamer:1.0.0
+          env:
+            - name: MQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_HOST
+            - name: MQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_PORT
+            - name: CSV_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: CSV_PATH
+            - name: BATCH_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: BATCH_SIZE
+            - name: COLLECT_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: COLLECT_INTERVAL
+            - name: INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: telemetry-data
+              mountPath: /data
+              readOnly: true
+      volumes:
+        - name: telemetry-data
+          hostPath:
+            path: /data
+            type: Directory
