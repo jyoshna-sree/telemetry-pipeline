@@ -4,9 +4,8 @@
 
 - [Technologies](#technologies)
 - [Architecture Overview](#architecture-overview)
-- [Components](#components)
-- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
+- [Components](#components)
 - [Configuration](#configuration)
 - [API Reference](#api-reference)
 - [Testing](#testing)
@@ -135,16 +134,6 @@ REST API for querying telemetry data with auto-generated Swagger documentation:
 
 ---
 
-## Prerequisites
-
-- **Go 1.22+** - [Download Go](https://go.dev/dl/)
-- **Docker Desktop** - For containerized deployment
-- **Make** - For build commands (`winget install ezwinports.make` on Windows)
-- **KIND** - For local Kubernetes cluster ([kind.sigs.k8s.io](https://kind.sigs.k8s.io/))
-- **kubectl** - Kubernetes CLI
-
----
-
 ## Quick Start
 
 ### Prerequisites
@@ -155,23 +144,8 @@ REST API for querying telemetry data with auto-generated Swagger documentation:
 - **KIND** - For local Kubernetes cluster
 - **kubectl** - Kubernetes CLI
 
-### Make Commands
 
-| Command | Description |
-|---------|-------------|
-| `make build` | Build Go binaries |
-| `make docker-build` | Build Docker images |
-| `make kind-setup` | Full setup: create KIND cluster, build images, load, copy CSV, deploy |
-| `make kind-delete` | Delete KIND cluster |
-| `make load-kind` | Load Docker images into existing KIND cluster |
-| `make k8s-deploy` | Deploy to Kubernetes |
-| `make k8s-delete` | Delete from Kubernetes |
-| `make k8s-status` | Show pod/service status |
-| `make test` | Run tests |
-| `make coverage` | Run tests with coverage |
-| `make clean` | Remove build artifacts |
-
-### Deploy to KIND (Recommended)
+### Deploy to KIND 
 
 **One-command setup:**
 ```bash
@@ -225,7 +199,21 @@ make test
 # Run tests with coverage report
 make coverage
 ```
+### Make Commands
 
+| Command | Description |
+|---------|-------------|
+| `make build` | Build Go binaries |
+| `make docker-build` | Build Docker images |
+| `make kind-setup` | Full setup: create KIND cluster, build images, load, copy CSV, deploy |
+| `make kind-delete` | Delete KIND cluster |
+| `make load-kind` | Load Docker images into existing KIND cluster |
+| `make k8s-deploy` | Deploy to Kubernetes |
+| `make k8s-delete` | Delete from Kubernetes |
+| `make k8s-status` | Show pod/service status |
+| `make test` | Run tests |
+| `make coverage` | Run tests with coverage |
+| `make clean` | Remove build artifacts |
 ---
 
 ## AI Usage Documentation
