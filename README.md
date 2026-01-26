@@ -194,13 +194,11 @@ This will:
 & "$env:USERPROFILE\kind.exe" create cluster --name gpu-telemetry --config deployments/kind/kind-config.yaml
 ```
 
-### Deploy with Docker Compose
-
-```bash
-docker-compose up -d
-```
-
 ### Access Services
+
+**Service URLs:**
+- **API:** http://localhost:30080
+- **InfluxDB:** http://localhost:30086
 
 | Service | URL | Description |
 |---------|-----|-------------|
@@ -213,120 +211,10 @@ docker-compose up -d
 - Password: `admin123`
 - Token: `my-super-secret-token`
 
-### Useful Commands
-
-```bash
-# Check pod status
-kubectl get pods -n gpu-telemetry
-
-# View streamer logs
-kubectl logs -f deployment/streamer -n gpu-telemetry
-
-# View collector logs
-kubectl logs -f deployment/collector -n gpu-telemetry
-
-# Delete cluster
-make kind-delete
-```
 
 ### CSV Data File
 
 The pipeline reads GPU telemetry from `dcgm_metrics_20250718_134233.csv`. When using KIND, this file is automatically copied to the cluster node at `/data/dcgm_metrics.csv`.
-
-To use a different CSV file, update `CSV_FILE` in the Makefile or copy manually:
-```bash
-docker cp your_file.csv gpu-telemetry-control-plane:/data/dcgm_metrics.csv
-kubectl delete pod -l app=streamer -n gpu-telemetry  # restart streamer
-```
-
----
-
-## Configuration
-
-### Environment Variables
-
-#### Message Queue Server
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TCP_ADDR` | `:9000` | TCP server address |
-| `HTTP_ADDR` | `:9001` | HTTP server address |
-| `BUFFER_SIZE` | `10000` | Initial message buffer size |
-
-#### Streamer
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MQ_HOST` | `localhost` | MQ server host |
-| `MQ_PORT` | `9000` | MQ server port |
-| `CSV_PATH` | (required) | Path to CSV file |
-| `BATCH_SIZE` | `100` | Max messages per batch |
-| `COLLECT_INTERVAL` | `5s` | How long to collect before publishing |
-| `INSTANCE_ID` | `` | Unique instance identifier |
-
-#### Collector
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MQ_HOST` | `localhost` | MQ server host |
-| `MQ_PORT` | `9000` | MQ server port |
-| `COLLECTOR_ID` | `collector-1` | Unique collector identifier |
-| `INFLUXDB_URL` | `http://localhost:8086` | InfluxDB server URL |
-| `INFLUXDB_TOKEN` | (required) | InfluxDB authentication token |
-| `INFLUXDB_ORG` | `cisco` | InfluxDB organization |
-| `INFLUXDB_BUCKET` | `gpu_telemetry` | InfluxDB bucket name |
-| `RETENTION_PERIOD` | `120h` | Data retention period (5 days) |
-| `FLUSH_INTERVAL` | `10s` | How often to flush to storage |
-
-#### API Gateway
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `8080` | HTTP server port |
-| `GIN_MODE` | `debug` | Gin mode (debug/release) |
-| `STORAGE_TYPE` | `memory` | Storage backend (memory/influxdb) |
-| `INFLUXDB_URL` | `http://localhost:8086` | InfluxDB server URL (if using influxdb) |
-| `INFLUXDB_TOKEN` | | InfluxDB authentication token |
-| `INFLUXDB_ORG` | `cisco` | InfluxDB organization |
-| `INFLUXDB_BUCKET` | `gpu_telemetry` | InfluxDB bucket name |
-| `MAX_PAGE_SIZE` | `1000` | Max items per page |
-
----
-
-## API Reference
-
-### Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/ready` | Readiness check |
-| `GET` | `/api/v1/gpus` | List all GPU IDs |
-| `GET` | `/api/v1/gpus/{id}/telemetry` | Get telemetry for a specific GPU |
-| `GET` | `/swagger/*` | Swagger UI |
-
-### Query Parameters for Telemetry
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `start_time` | RFC3339 | Start time filter (e.g., 2024-01-01T00:00:00Z) |
-| `end_time` | RFC3339 | End time filter |
-| `limit` | int | Maximum results (default: 100) |
-| `offset` | int | Offset for pagination |
-
-### Example Requests
-
-```bash
-# Health check
-curl http://localhost:8080/health
-
-# List all GPUs
-curl http://localhost:8080/api/v1/gpus
-
-# Get telemetry for a GPU
-curl "http://localhost:8080/api/v1/gpus/GPU-abc123/telemetry?limit=10"
-
-# Get GPU telemetry with time filter
-curl "http://localhost:8080/api/v1/gpus/GPU-abc123/telemetry?start_time=2025-07-18T00:00:00Z&end_time=2025-07-18T23:59:59Z"
-```
-
----
 
 ## Testing
 
