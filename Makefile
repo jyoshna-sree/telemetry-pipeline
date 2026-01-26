@@ -49,8 +49,8 @@ docker-build:
 
 ## kind-setup: Create KIND cluster, load images, copy CSV, and deploy
 kind-setup: docker-build
-	@echo "Creating KIND cluster..."
-	kind create cluster --name $(KIND_CLUSTER) || true
+	@echo "Creating KIND cluster with port mappings..."
+	kind create cluster --name $(KIND_CLUSTER) --config deployments/kind/kind-config.yaml || true
 	@echo "Loading images into KIND cluster..."
 	kind load docker-image $(APP_NAME)/api:$(IMAGE_TAG) --name $(KIND_CLUSTER)
 	kind load docker-image $(APP_NAME)/mq-server:$(IMAGE_TAG) --name $(KIND_CLUSTER)
@@ -59,25 +59,22 @@ kind-setup: docker-build
 	@echo "Copying CSV data to cluster node..."
 	docker exec $(KIND_CLUSTER)-control-plane mkdir -p /data
 	docker cp $(CSV_FILE) $(KIND_CLUSTER)-control-plane:/data/dcgm_metrics.csv
+	@echo "Creating namespace..."
+	kubectl apply -f deployments/kubernetes/namespace.yaml
+	@echo "Waiting for namespace to be ready..."
+	sleep 3
 	@echo "Deploying to Kubernetes..."
 	kubectl apply -f deployments/kubernetes/
-	@echo "Waiting for namespace to be ready..."
-	sleep 2
-	kubectl apply -f deployments/kubernetes/
 	@echo "KIND cluster setup complete!"
+	@echo ""
+	@echo "Access URLs:"
+	@echo "  API:      http://localhost:30080"
+	@echo "  InfluxDB: http://localhost:30086"
 
 ## kind-delete: Delete KIND cluster
 kind-delete:
 	@echo "Deleting KIND cluster..."
 	kind delete cluster --name $(KIND_CLUSTER)
-
-## load-kind: Load Docker images into KIND cluster (standalone)
-load-kind:
-	@echo "Loading images into KIND cluster..."
-	kind load docker-image $(APP_NAME)/api:$(IMAGE_TAG) --name $(KIND_CLUSTER)
-	kind load docker-image $(APP_NAME)/mq-server:$(IMAGE_TAG) --name $(KIND_CLUSTER)
-	kind load docker-image $(APP_NAME)/streamer:$(IMAGE_TAG) --name $(KIND_CLUSTER)
-	kind load docker-image $(APP_NAME)/collector:$(IMAGE_TAG) --name $(KIND_CLUSTER)
 
 # ============================================
 # Kubernetes Targets
@@ -97,6 +94,17 @@ k8s-delete:
 k8s-status:
 	kubectl get pods -n gpu-telemetry
 	kubectl get svc -n gpu-telemetry
+
+## k8s-reset-influxdb: Reset InfluxDB (delete pod to clear all data)
+k8s-reset-influxdb:
+	@echo "Resetting InfluxDB (deleting deployment and PVC)..."
+	kubectl delete deployment influxdb -n gpu-telemetry --ignore-not-found
+	kubectl delete pvc influxdb-pvc -n gpu-telemetry --ignore-not-found
+	@echo "Recreating InfluxDB..."
+	kubectl apply -f deployments/kubernetes/influxdb.yaml
+	@echo "Waiting for InfluxDB to be ready..."
+	kubectl wait --for=condition=ready pod -l app=influxdb -n gpu-telemetry --timeout=120s
+	@echo "InfluxDB reset complete!"
 
 # ============================================
 # Test Targets

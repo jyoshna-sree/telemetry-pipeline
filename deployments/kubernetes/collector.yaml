@@ -58,3 +58,8 @@ spec:
                 configMapKeyRef:
                   name: gpu-telemetry-config
                   key: FLUSH_INTERVAL
+            - name: RETENTION_PERIOD
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: RETENTION_PERIOD

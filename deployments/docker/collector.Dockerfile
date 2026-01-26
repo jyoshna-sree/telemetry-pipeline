@@ -43,7 +43,7 @@ ENV MQ_HOST=mq-server
 ENV MQ_PORT=9000
 ENV MQ_TOPIC=telemetry.metrics
 ENV STORAGE_TYPE=memory
-ENV RETENTION_PERIOD=24h
+ENV RETENTION_PERIOD=120h
 
 # Run the collector
 ENTRYPOINT ["collector"]

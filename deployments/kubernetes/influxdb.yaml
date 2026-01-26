@@ -1,3 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pvc
+  namespace: gpu-telemetry
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -62,7 +74,8 @@ spec:
             periodSeconds: 10
       volumes:
         - name: influxdb-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: influxdb-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -75,4 +88,5 @@ spec:
   ports:
     - port: 8086
       targetPort: 8086
-  type: ClusterIP
+      nodePort: 30086
+  type: NodePort

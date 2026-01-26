@@ -25,3 +25,4 @@ data:
   
   # Collector settings
   FLUSH_INTERVAL: "10s"
+  RETENTION_PERIOD: "120h"

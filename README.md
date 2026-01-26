@@ -138,26 +138,63 @@ REST API for querying telemetry data with auto-generated Swagger documentation:
 ## Prerequisites
 
 - **Go 1.22+** - [Download Go](https://go.dev/dl/)
-- **Docker** - For containerized deployment
-- **Make** - For running build commands
+- **Docker Desktop** - For containerized deployment
+- **Make** - For build commands (`winget install ezwinports.make` on Windows)
+- **KIND** - For local Kubernetes cluster ([kind.sigs.k8s.io](https://kind.sigs.k8s.io/))
+- **kubectl** - Kubernetes CLI
 
 ---
 
 ## Quick Start
 
+### Prerequisites
+
+- **Go 1.22+** - [Download Go](https://go.dev/dl/)
+- **Docker Desktop** - For containerized deployment
+- **Make** - For build commands (`winget install ezwinports.make` on Windows)
+- **KIND** - For local Kubernetes cluster
+- **kubectl** - Kubernetes CLI
+
 ### Make Commands
 
-| Command | What it does |
-|---------|--------------|
+| Command | Description |
+|---------|-------------|
 | `make build` | Build Go binaries |
 | `make docker-build` | Build Docker images |
+| `make kind-setup` | Full setup: create KIND cluster, build images, load, copy CSV, deploy |
+| `make kind-delete` | Delete KIND cluster |
+| `make load-kind` | Load Docker images into existing KIND cluster |
 | `make k8s-deploy` | Deploy to Kubernetes |
 | `make k8s-delete` | Delete from Kubernetes |
+| `make k8s-status` | Show pod/service status |
 | `make test` | Run tests |
 | `make coverage` | Run tests with coverage |
 | `make clean` | Remove build artifacts |
 
-### Run with Docker Compose
+### Deploy to KIND (Recommended)
+
+**One-command setup:**
+```bash
+make kind-setup
+```
+
+This will:
+1. Build all Docker images
+2. Create KIND cluster with port mappings
+3. Load images into cluster
+4. Copy CSV data file to cluster
+5. Deploy all services
+
+**Note:** On Windows, if `kind` is not in PATH, run these manually:
+```powershell
+# Add kind to PATH (one-time)
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$env:USERPROFILE", "User")
+
+# Or run kind directly
+& "$env:USERPROFILE\kind.exe" create cluster --name gpu-telemetry --config deployments/kind/kind-config.yaml
+```
+
+### Deploy with Docker Compose
 
 ```bash
 docker-compose up -d
@@ -167,14 +204,39 @@ docker-compose up -d
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| API Swagger UI | http://localhost:8080/swagger/index.html | Interactive API docs |
-| API GPUs | http://localhost:8080/api/v1/gpus | List all GPUs |
-| InfluxDB UI | http://localhost:8086 | InfluxDB dashboard (admin/adminpassword) |
+| API Swagger UI | http://localhost:30080/swagger/index.html | Interactive API docs |
+| API Health | http://localhost:30080/health | Health check |
+| InfluxDB UI | http://localhost:30086 | InfluxDB dashboard |
 
-### Stop Services
+**InfluxDB Credentials:**
+- Username: `admin`
+- Password: `admin123`
+- Token: `my-super-secret-token`
+
+### Useful Commands
 
 ```bash
-docker-compose down
+# Check pod status
+kubectl get pods -n gpu-telemetry
+
+# View streamer logs
+kubectl logs -f deployment/streamer -n gpu-telemetry
+
+# View collector logs
+kubectl logs -f deployment/collector -n gpu-telemetry
+
+# Delete cluster
+make kind-delete
+```
+
+### CSV Data File
+
+The pipeline reads GPU telemetry from `dcgm_metrics_20250718_134233.csv`. When using KIND, this file is automatically copied to the cluster node at `/data/dcgm_metrics.csv`.
+
+To use a different CSV file, update `CSV_FILE` in the Makefile or copy manually:
+```bash
+docker cp your_file.csv gpu-telemetry-control-plane:/data/dcgm_metrics.csv
+kubectl delete pod -l app=streamer -n gpu-telemetry  # restart streamer
 ```
 
 ---
@@ -210,7 +272,7 @@ docker-compose down
 | `INFLUXDB_TOKEN` | (required) | InfluxDB authentication token |
 | `INFLUXDB_ORG` | `cisco` | InfluxDB organization |
 | `INFLUXDB_BUCKET` | `gpu_telemetry` | InfluxDB bucket name |
-| `RETENTION_PERIOD` | `24h` | Data retention period |
+| `RETENTION_PERIOD` | `120h` | Data retention period (5 days) |
 | `FLUSH_INTERVAL` | `10s` | How often to flush to storage |
 
 #### API Gateway
@@ -268,7 +330,13 @@ curl "http://localhost:8080/api/v1/gpus/GPU-abc123/telemetry?start_time=2025-07-
 
 ## Testing
 
-Run tests with `make test` or `make coverage` (see Make Commands table above).
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage report
+make coverage
+```
 
 ---
 
