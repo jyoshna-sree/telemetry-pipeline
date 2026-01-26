@@ -1,0 +1,21 @@
+# KIND cluster configuration
+# Creates a single-node Kubernetes cluster for local development
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: gpu-telemetry
+nodes:
+  - role: control-plane
+    # Port mappings: access services from localhost
+    extraPortMappings:
+      # API Gateway - accessible at http://localhost:8080
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+      # MQ Server HTTP (stats/health) - accessible at http://localhost:9001
+      - containerPort: 30001
+        hostPort: 9001
+        protocol: TCP
+      # InfluxDB UI - accessible at http://localhost:8086
+      - containerPort: 30086
+        hostPort: 8086
+        protocol: TCP

@@ -1,0 +1,107 @@
+{{- if .Values.mqServer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gpu-telemetry-pipeline.mqServer.name" . }}
+  labels:
+    {{- include "gpu-telemetry-pipeline.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mq-server
+spec:
+  replicas: {{ .Values.mqServer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gpu-telemetry-pipeline.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mq-server
+  template:
+    metadata:
+      labels:
+        {{- include "gpu-telemetry-pipeline.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mq-server
+    spec:
+      {{- include "gpu-telemetry-pipeline.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "gpu-telemetry-pipeline.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: mq-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.mqServer.image.repository }}:{{ .Values.mqServer.image.tag }}"
+          imagePullPolicy: {{ .Values.mqServer.image.pullPolicy }}
+          ports:
+            - name: tcp
+              containerPort: 9000
+              protocol: TCP
+            - name: http
+              containerPort: 9001
+              protocol: TCP
+          env:
+            - name: GRPC_HOST
+              value: "0.0.0.0"
+            - name: GRPC_PORT
+              value: "9000"
+            - name: HTTP_HOST
+              value: "0.0.0.0"
+            - name: HTTP_PORT
+              value: "9001"
+            - name: MQ_WORKER_COUNT
+              value: {{ .Values.mqServer.config.workerCount | quote }}
+            - name: MQ_BUFFER_SIZE
+              value: {{ .Values.mqServer.config.bufferSize | quote }}
+            - name: MQ_PARTITIONS
+              value: {{ .Values.mqServer.config.partitions | quote }}
+            - name: MQ_MAX_RETRIES
+              value: {{ .Values.mqServer.config.maxRetries | quote }}
+            - name: MQ_RETRY_DELAY
+              value: {{ .Values.mqServer.config.retryDelay | quote }}
+            - name: MQ_ACK_TIMEOUT
+              value: {{ .Values.mqServer.config.ackTimeout | quote }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.mqServer.resources | nindent 12 }}
+      {{- with .Values.mqServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mqServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mqServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gpu-telemetry-pipeline.mqServer.name" . }}
+  labels:
+    {{- include "gpu-telemetry-pipeline.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mq-server
+spec:
+  type: {{ .Values.mqServer.service.type }}
+  ports:
+    - port: {{ .Values.mqServer.service.tcpPort }}
+      targetPort: tcp
+      protocol: TCP
+      name: tcp
+    - port: {{ .Values.mqServer.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "gpu-telemetry-pipeline.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mq-server
+{{- end }}

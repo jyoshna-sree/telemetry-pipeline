@@ -1,0 +1,154 @@
+# InfluxDB deployment for KIND
+# This creates InfluxDB with initial setup (org, bucket, token)
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: influxdb-secrets
+type: Opaque
+stringData:
+  admin-username: admin
+  admin-password: adminpassword
+  admin-token: my-super-secret-token
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: influxdb-config
+data:
+  DOCKER_INFLUXDB_INIT_MODE: setup
+  DOCKER_INFLUXDB_INIT_ORG: cisco
+  DOCKER_INFLUXDB_INIT_BUCKET: gpu_telemetry
+  DOCKER_INFLUXDB_INIT_RETENTION: 7d
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  labels:
+    app: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+        - name: influxdb
+          image: influxdb:2.7
+          ports:
+            - containerPort: 8086
+              name: http
+          env:
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: influxdb-config
+                  key: DOCKER_INFLUXDB_INIT_MODE
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-secrets
+                  key: admin-username
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-secrets
+                  key: admin-password
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: influxdb-config
+                  key: DOCKER_INFLUXDB_INIT_ORG
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: influxdb-config
+                  key: DOCKER_INFLUXDB_INIT_BUCKET
+            - name: DOCKER_INFLUXDB_INIT_RETENTION
+              valueFrom:
+                configMapKeyRef:
+                  name: influxdb-config
+                  key: DOCKER_INFLUXDB_INIT_RETENTION
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-secrets
+                  key: admin-token
+          volumeMounts:
+            - name: influxdb-data
+              mountPath: /var/lib/influxdb2
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: influxdb-data
+          persistentVolumeClaim:
+            claimName: influxdb-pvc
+---
+# PersistentVolumeClaim for InfluxDB data persistence
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pvc
+  labels:
+    app: influxdb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # KIND uses 'standard' by default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  labels:
+    app: influxdb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8086
+      targetPort: 8086
+      name: http
+  selector:
+    app: influxdb
+---
+# NodePort service for external access (optional, for debugging)
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-external
+  labels:
+    app: influxdb
+spec:
+  type: NodePort
+  ports:
+    - port: 8086
+      targetPort: 8086
+      nodePort: 30086
+      name: http
+  selector:
+    app: influxdb

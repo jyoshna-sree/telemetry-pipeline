@@ -1,0 +1,238 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for querying GPU telemetry data from an AI cluster.",
+        "title": "GPU Telemetry API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/v1/gpus": {
+            "get": {
+                "description": "Returns a list of all GPUs for which telemetry data is available",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gpus"
+                ],
+                "summary": "List all GPUssssssssss",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.GPUListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gpus/{id}/telemetry": {
+            "get": {
+                "description": "Returns all telemetry entries for a specific GPU, ordered by time",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gpus"
+                ],
+                "summary": "Get GPU telemetry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "GPU UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2024-01-01T00:00:00Z",
+                        "description": "Start time filter (RFC3339)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2024-01-02T00:00:00Z",
+                        "description": "End time filter (RFC3339)",
+                        "name": "end_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 100,
+                        "description": "Maximum results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TelemetryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "internal_error"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Failed to fetch data"
+                }
+            }
+        },
+        "handlers.GPUListResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 256
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.GPUInfo"
+                    }
+                }
+            }
+        },
+        "handlers.TelemetryResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.GPUMetric"
+                    }
+                }
+            }
+        },
+        "models.GPUInfo": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "type": "string"
+                },
+                "first_seen": {
+                    "type": "string"
+                },
+                "gpu_id": {
+                    "type": "integer"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "last_seen": {
+                    "type": "string"
+                },
+                "model_name": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GPUMetric": {
+            "type": "object",
+            "properties": {
+                "container": {
+                    "description": "Container is the Kubernetes container name (optional)",
+                    "type": "string"
+                },
+                "device": {
+                    "description": "Device is the device name (e.g., nvidia0)",
+                    "type": "string"
+                },
+                "gpu_id": {
+                    "description": "GPUID is the local GPU index on the host (0-7 for DGX systems)",
+                    "type": "integer"
+                },
+                "hostname": {
+                    "description": "Hostname is the host where the GPU is located",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "Labels contains additional key-value metadata from the original telemetry",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "metric_name": {
+                    "description": "MetricName is the DCGM metric identifier (e.g., DCGM_FI_DEV_GPU_UTIL)",
+                    "type": "string"
+                },
+                "model_name": {
+                    "description": "ModelName is the GPU model (e.g., NVIDIA H100 80GB HBM3)",
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "Namespace is the Kubernetes namespace (optional)",
+                    "type": "string"
+                },
+                "pod": {
+                    "description": "Pod is the Kubernetes pod name (optional)",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "Timestamp when the metric was processed (pipeline processing time)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID is the unique identifier for the GPU across the cluster",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Value is the metric value (utilization %, clock MHz, etc.)",
+                    "type": "number"
+                }
+            }
+        }
+    }
+}

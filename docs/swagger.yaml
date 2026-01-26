@@ -1,0 +1,165 @@
+basePath: /
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: internal_error
+        type: string
+      message:
+        example: Failed to fetch data
+        type: string
+    type: object
+  handlers.GPUListResponse:
+    properties:
+      count:
+        example: 256
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/models.GPUInfo'
+        type: array
+    type: object
+  handlers.TelemetryResponse:
+    properties:
+      count:
+        example: 100
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/models.GPUMetric'
+        type: array
+    type: object
+  models.GPUInfo:
+    properties:
+      device:
+        type: string
+      first_seen:
+        type: string
+      gpu_id:
+        type: integer
+      hostname:
+        type: string
+      last_seen:
+        type: string
+      model_name:
+        type: string
+      uuid:
+        type: string
+    type: object
+  models.GPUMetric:
+    properties:
+      container:
+        description: Container is the Kubernetes container name (optional)
+        type: string
+      device:
+        description: Device is the device name (e.g., nvidia0)
+        type: string
+      gpu_id:
+        description: GPUID is the local GPU index on the host (0-7 for DGX systems)
+        type: integer
+      hostname:
+        description: Hostname is the host where the GPU is located
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels contains additional key-value metadata from the original
+          telemetry
+        type: object
+      metric_name:
+        description: MetricName is the DCGM metric identifier (e.g., DCGM_FI_DEV_GPU_UTIL)
+        type: string
+      model_name:
+        description: ModelName is the GPU model (e.g., NVIDIA H100 80GB HBM3)
+        type: string
+      namespace:
+        description: Namespace is the Kubernetes namespace (optional)
+        type: string
+      pod:
+        description: Pod is the Kubernetes pod name (optional)
+        type: string
+      timestamp:
+        description: Timestamp when the metric was processed (pipeline processing
+          time)
+        type: string
+      uuid:
+        description: UUID is the unique identifier for the GPU across the cluster
+        type: string
+      value:
+        description: Value is the metric value (utilization %, clock MHz, etc.)
+        type: number
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for querying GPU telemetry data from an AI cluster.
+  title: GPU Telemetry API
+  version: "1.0"
+paths:
+  /api/v1/gpus:
+    get:
+      description: Returns a list of all GPUs for which telemetry data is available
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GPUListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all GPUssssssssss
+      tags:
+      - gpus
+  /api/v1/gpus/{id}/telemetry:
+    get:
+      description: Returns all telemetry entries for a specific GPU, ordered by time
+      parameters:
+      - description: GPU UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Start time filter (RFC3339)
+        example: "2024-01-01T00:00:00Z"
+        in: query
+        name: start_time
+        type: string
+      - description: End time filter (RFC3339)
+        example: "2024-01-02T00:00:00Z"
+        in: query
+        name: end_time
+        type: string
+      - default: 100
+        description: Maximum results
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TelemetryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get GPU telemetry
+      tags:
+      - gpus
+schemes:
+- http
+swagger: "2.0"
