@@ -27,10 +27,36 @@ ALL_DIRS := $(CMD_DIRS) $(PKG_DIRS) $(INTERNAL_DIRS)
 GREEN := \033[0;32m
 NC := \033[0m
 
-.PHONY: all build test coverage clean docker helm swagger lint fmt vet help
+.PHONY: all build test coverage clean docker helm swagger lint fmt vet help buildproject
 
 # Default target
 all: fmt vet lint test build
+
+#
+# One-command build target
+#
+
+## buildproject: Complete project build - installs deps, builds binaries, builds Docker images
+buildproject: tidy swagger build docker-build
+	@echo "$(GREEN)========================================$(NC)"
+	@echo "$(GREEN)Project build complete!$(NC)"
+	@echo "$(GREEN)========================================$(NC)"
+	@echo ""
+	@echo "Built binaries in ./bin:"
+	@echo "  - bin/api"
+	@echo "  - bin/mq-server"
+	@echo "  - bin/streamer"
+	@echo "  - bin/collector"
+	@echo ""
+	@echo "Built Docker images:"
+	@echo "  - $(APP_NAME)/api:$(IMAGE_TAG)"
+	@echo "  - $(APP_NAME)/mq-server:$(IMAGE_TAG)"
+	@echo "  - $(APP_NAME)/streamer:$(IMAGE_TAG)"
+	@echo "  - $(APP_NAME)/collector:$(IMAGE_TAG)"
+	@echo ""
+	@echo "To run with Docker Compose:"
+	@echo "  docker-compose up -d"
+	@echo ""
 
 #
 # Build targets
