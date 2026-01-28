@@ -63,8 +63,8 @@ kind-setup: docker-build
 	kubectl apply -f deployments/kubernetes/namespace.yaml
 	@echo "Waiting for namespace to be ready..."
 	sleep 3
-	@echo "Deploying to Kubernetes..."
-	kubectl apply -f deployments/kubernetes/
+	@echo "Deploying with Helm..."
+	helm upgrade --install telemetry-pipeline ./helm/telemetry-pipeline --namespace gpu-telemetry --create-namespace
 	@echo "KIND cluster setup complete!"
 	@echo ""
 	@echo "Access URLs:"

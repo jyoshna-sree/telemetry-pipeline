@@ -10,3 +10,7 @@ docker cp dcgm_metrics_20250718_134233.csv gpu-telemetry-control-plane:/tmp/dcgm
 
 API: http://localhost:30080
 InfluxDB: http://localhost:30086
+
+
+choco install kind -y
+choco install kubernetes-cli -y
