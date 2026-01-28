@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: collector
+spec:
+  replicas: {{ .Values.collector.replicaCount }}
+  selector:
+    matchLabels:
+      app: collector
+  template:
+    metadata:
+      labels:
+        app: collector
+    spec:
+      containers:
+        - name: collector
+          image: "{{ .Values.collector.image.repository }}:{{ .Values.collector.image.tag }}"
+          imagePullPolicy: {{ .Values.collector.image.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: MQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_HOST
+            - name: MQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_PORT
+            - name: COLLECTOR_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: INFLUXDB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_URL
+            - name: INFLUXDB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gpu-telemetry-secret
+                  key: INFLUXDB_TOKEN
+            - name: INFLUXDB_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_ORG
+            - name: INFLUXDB_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_BUCKET
+            - name: FLUSH_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: FLUSH_INTERVAL
+            - name: RETENTION_PERIOD
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: RETENTION_PERIOD
+          resources:
+            {{- toYaml .Values.collector.resources | nindent 12 }}

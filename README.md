@@ -38,6 +38,29 @@ This will:
 4. Copy CSV data file to cluster
 5. Deploy all services
 
+### Deploy with Helm
+
+**Using Helm charts:**
+```bash
+# Install with Helm
+helm install telemetry-pipeline ./helm/telemetry-pipeline
+
+# Or with custom values
+helm install telemetry-pipeline ./helm/telemetry-pipeline -f custom-values.yaml
+
+# Upgrade existing deployment
+helm upgrade telemetry-pipeline ./helm/telemetry-pipeline
+
+# Uninstall
+helm uninstall telemetry-pipeline
+```
+
+The Helm charts include:
+- Complete InfluxDB deployment with PVC
+- All components with proper configuration
+- Resource limits and health checks
+- Configurable via values.yaml
+
 **Note:** On Windows, if `kind` is not in PATH, run these manually:
 ```powershell
 # Add kind to PATH (one-time)
@@ -174,18 +197,62 @@ Golang, InfluxDB, Docker, Kubernetes.
 - **Offset-Based Consumption**: Subscribers can specify where to start reading: `OffsetEarliest` (beginning), `OffsetLatest` (new messages only), or a specific offset. Each collector tracks its own position.
 - **Fan-Out Pattern**: Every collector receives ALL messages (not load-balanced). This allows multiple independent consumers to process the same data stream.
 
+### Why TCP over gRPC?
+- **Simplicity:** TCP sockets are easier to debug and require less setup than gRPC for a custom log-based queue.
+- **Performance:** For simple message passing, TCP with length-prefixed JSON is fast and has minimal overhead.
+- **Portability:** No need for .proto files or code generation; easier for new contributors.
+- **Extensibility:** If future requirements demand richer contracts, gRPC can be added later without major refactor.
+
+### Why Helm?
+- **Abstraction:** Helm simplifies Kubernetes deployments, templating, and configuration management.
+- **Portability:** Users can deploy the stack with a single command and override values as needed.
+- **Best Practice:** Helm is the de facto standard for packaging and distributing Kubernetes applications.
+
+### Why Port Forwarding?
+- **Developer Experience:** Port-forwarding allows local access to cluster services (API, InfluxDB) without exposing them externally.
+- **Security:** Reduces attack surface by not exposing NodePorts in production.
+
+### Docker
+All services are containerized using Docker for consistent builds and deployments. Dockerfiles were generated with AI assistance and manually refined for multi-stage builds and best practices.
+
+### Makefile Enhancements
+- Targets for build, test, coverage, integration, Helm, and Kubernetes operations.
+- `make openapi-gen` generates the OpenAPI spec.
+- `make port-forward-api` and `make port-forward-influxdb` for local access.
+
+### Developer Experience
+- System integration tests are provided in both Bash and PowerShell for cross-platform validation.
+- The Makefile is enhanced for a smooth developer workflow.
 
 ---
 
 ## Testing
 
 ```bash
-# Run all tests
+# Run all unit tests
 make test
 
 # Run tests with coverage report
 make coverage
+
+# Run integration tests (requires deployed system)
+make integration-test
+
+# Deploy to KIND and run integration tests
+make integration-test-kind
 ```
+
+### Integration Tests
+
+Integration tests verify the complete pipeline end-to-end:
+- API health and readiness checks
+- GPU listing and querying
+- Telemetry retrieval with filters
+- Metric name listing
+- System statistics
+- Error handling
+
+Tests are available in both bash (`tests/integration_test.sh`) and PowerShell (`tests/integration_test.ps1`) formats.
 
 ---
 
@@ -235,24 +302,36 @@ The pipeline reads GPU telemetry from `dcgm_metrics_20250718_134233.csv`. When u
 
 ## AI Usage Documentation
 
-This section documents how AI assistance was used in the development of this project, as required by the project specification.
+This project extensively used AI assistance throughout development. For comprehensive documentation of all AI prompts, issues encountered, solutions, and lessons learned, see:
 
-### AI Tool Used
+**[Complete AI Documentation](./docs/AI_DOCUMENTATION.md)**
 
+### Quick Summary
+
+**AI Tool Used:**
 - **Tool**: GitHub Copilot (Claude-based assistant)
 - **Interface**: VS Code Chat/Agent Mode
 
-### Specific AI Contributions
+**Key AI Contributions:**
+- Project architecture and initial code structure
+- Message queue implementation
+- CSV parser and InfluxDB integration
+- REST API with Swagger documentation (including telemetry export)
+- Docker and Kubernetes configurations
+- Unit test frameworks
 
-**Prompts used:** "Plan the project and then first implement message queue - an in-memory slice that is append-only and can support writes from various clients. Streamers which can read CSV and push into the queue, and collector to read and push into InfluxDB. API registry with auto-generated API spec with GET API calls as in the doc."
+**Issues Encountered & Fixed:**
+1. **Broken Telemetry Query**: AI used `tail()` instead of `skip()` for pagination offset - manually fixed
+2. **Incomplete Helm Charts**: Missing InfluxDB, secrets, namespace, PVCs - completed manually
+3. **Missing Features**: Additional REST endpoints (including telemetry export), integration tests - added manually
 
-**Issues encountered:** AI initially used topics and worker pools which were not needed for this use case. It also didn't implement support for multiple streamers and was not collecting metrics data over a period of time (batching).
+**Lessons Learned:**
+- AI excels at code structure and boilerplate generation
+- Human oversight essential for domain-specific knowledge (InfluxDB, Kubernetes)
+- Always review and test AI-generated code thoroughly
+- Production-ready configurations require manual refinement
 
-### AI Limitations Observed
-
-1. **Context Window**: Required breaking large implementations into smaller chunks.
-2. **Over-engineering**: Most of the time it complicates simpler tasks by adding too many abstractions and handling too many edge cases.
-3. **Environment-Specific Configs**: Required manual adjustment for specific deployment environments.
+See [AI_DOCUMENTATION.md](./docs/AI_DOCUMENTATION.md) for detailed prompts, issues, and solutions.
 
 
 

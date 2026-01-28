@@ -55,8 +55,23 @@ func NewRouter(store storage.ReadStorage, config RouterConfig) *mux.Router {
 	// GET /api/v1/gpus - List all GPUs
 	api.HandleFunc("/gpus", handler.ListGPUs).Methods(http.MethodGet)
 
+	// GET /api/v1/gpus/{id} - Get GPU information
+	api.HandleFunc("/gpus/{id}", handler.GetGPUInfo).Methods(http.MethodGet)
+
 	// GET /api/v1/gpus/{id}/telemetry - Get telemetry for a GPU
 	api.HandleFunc("/gpus/{id}/telemetry", handler.GetGPUTelemetry).Methods(http.MethodGet)
+
+	// GET /api/v1/gpus/{id}/metrics - List available metric names for a GPU
+	api.HandleFunc("/gpus/{id}/metrics", handler.ListMetricNames).Methods(http.MethodGet)
+
+	// GET /api/v1/metrics - List all available metric types
+	api.HandleFunc("/metrics", handler.ListAllMetrics).Methods(http.MethodGet)
+
+	// GET /api/v1/stats - Get system statistics
+	api.HandleFunc("/stats", handler.GetStats).Methods(http.MethodGet)
+
+	// GET /api/v1/gpus/{id}/telemetry/export - Export telemetry data for a GPU as CSV or JSON
+	api.HandleFunc("/gpus/{id}/telemetry/export", handler.ExportGPUTelemetry).Methods(http.MethodGet)
 
 	return router
 }

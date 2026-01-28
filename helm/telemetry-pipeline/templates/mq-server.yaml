@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mq-server
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: mq-server
+spec:
+  replicas: {{ .Values.mqServer.replicaCount }}
+  selector:
+    matchLabels:
+      app: mq-server
+  template:
+    metadata:
+      labels:
+        app: mq-server
+    spec:
+      containers:
+        - name: mq-server
+          image: "{{ .Values.mqServer.image.repository }}:{{ .Values.mqServer.image.tag }}"
+          imagePullPolicy: {{ .Values.mqServer.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 9000
+              name: tcp
+            - containerPort: 9001
+              name: http
+          env:
+            - name: TCP_ADDR
+              value: ":9000"
+            - name: HTTP_ADDR
+              value: ":9001"
+            - name: BUFFER_SIZE
+              value: {{ .Values.mqServer.bufferSize | default "10000" | quote }}
+          resources:
+            {{- toYaml .Values.mqServer.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9001
+            initialDelaySeconds: {{ .Values.mqServer.probes.readiness.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.mqServer.probes.readiness.periodSeconds | default 5 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9001
+            initialDelaySeconds: {{ .Values.mqServer.probes.liveness.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .Values.mqServer.probes.liveness.periodSeconds | default 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mq-server
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: mq-server
+spec:
+  type: {{ .Values.mqServer.service.type }}
+  ports:
+    - name: tcp
+      port: {{ .Values.mqServer.service.tcpPort | default 9000 }}
+      targetPort: 9000
+    - name: http
+      port: {{ .Values.mqServer.service.httpPort | default 9001 }}
+      targetPort: 9001
+  selector:
+    app: mq-server

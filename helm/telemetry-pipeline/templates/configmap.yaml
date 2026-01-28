@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-telemetry-config
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: telemetry-pipeline
+data:
+  # InfluxDB settings
+  INFLUXDB_URL: {{ .Values.config.influxdb.url | quote }}
+  INFLUXDB_ORG: {{ .Values.config.influxdb.org | quote }}
+  INFLUXDB_BUCKET: {{ .Values.config.influxdb.bucket | quote }}
+  
+  # MQ settings
+  MQ_HOST: {{ .Values.config.mq.host | quote }}
+  MQ_PORT: {{ .Values.config.mq.port | quote }}
+  
+  # API settings
+  GIN_MODE: {{ .Values.config.api.ginMode | quote }}
+  STORAGE_TYPE: {{ .Values.config.api.storageType | quote }}
+  MAX_PAGE_SIZE: {{ .Values.config.api.maxPageSize | quote }}
+  
+  # Streamer settings
+  BATCH_SIZE: {{ .Values.config.streamer.batchSize | quote }}
+  COLLECT_INTERVAL: {{ .Values.config.streamer.collectInterval | quote }}
+  CSV_PATH: {{ .Values.config.streamer.csvPath | quote }}
+  
+  # Collector settings
+  FLUSH_INTERVAL: {{ .Values.config.collector.flushInterval | quote }}
+  RETENTION_PERIOD: {{ .Values.config.collector.retentionPeriod | quote }}

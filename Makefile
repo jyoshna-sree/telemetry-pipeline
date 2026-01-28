@@ -120,6 +120,26 @@ coverage:
 	$(GO) test -coverprofile=$(COVERAGE_DIR)/coverage.out ./...
 	$(GO) tool cover -html=$(COVERAGE_DIR)/coverage.out -o $(COVERAGE_DIR)/coverage.html
 
+## integration-test: Run integration tests against deployed system
+integration-test:
+	@echo "Running integration tests..."
+	@if [ -f tests/integration_test.sh ]; then \
+		chmod +x tests/integration_test.sh && \
+		./tests/integration_test.sh; \
+	elif [ -f tests/integration_test.ps1 ]; then \
+		powershell -ExecutionPolicy Bypass -File tests/integration_test.ps1; \
+	else \
+		echo "Integration test script not found"; \
+		exit 1; \
+	fi
+
+## integration-test-kind: Deploy to KIND and run integration tests
+integration-test-kind: kind-setup
+	@echo "Waiting for system to be ready..."
+	@sleep 30
+	@echo "Running integration tests..."
+	@$(MAKE) integration-test
+
 # ============================================
 # Clean Targets
 # ============================================
@@ -139,19 +159,58 @@ clean-docker:
 # Help
 # ============================================
 
+## helm-install: Install using Helm charts
+helm-install:
+	@echo "Installing with Helm..."
+	helm install telemetry-pipeline ./helm/telemetry-pipeline
+
+## openapi-gen: Generate OpenAPI (Swagger) spec
+openapi-gen:
+	@echo "Generating OpenAPI spec..."
+	swagger generate spec -o ./docs/swagger.json --scan-models
+
+## port-forward-api: Port-forward API service to localhost:30080
+port-forward-api:
+	kubectl port-forward svc/api 30080:8080 -n gpu-telemetry
+
+## port-forward-influxdb: Port-forward InfluxDB to localhost:30086
+port-forward-influxdb:
+	kubectl port-forward svc/influxdb 30086:8086 -n gpu-telemetry
+
+## helm-upgrade: Upgrade Helm deployment
+helm-upgrade:
+	@echo "Upgrading Helm deployment..."
+	helm upgrade telemetry-pipeline ./helm/telemetry-pipeline
+
+## helm-uninstall: Uninstall Helm deployment
+helm-uninstall:
+	@echo "Uninstalling Helm deployment..."
+	helm uninstall telemetry-pipeline
+
+## helm-template: Render Helm templates (for debugging)
+helm-template:
+	@echo "Rendering Helm templates..."
+	helm template telemetry-pipeline ./helm/telemetry-pipeline
+
 ## help: Show this help
 help:
 	@echo "Available targets:"
 	@echo ""
-	@echo "  kind-setup    - Create KIND cluster, build, load images, copy CSV, deploy (full setup)"
-	@echo "  kind-delete   - Delete KIND cluster"
-	@echo "  build         - Build Go binaries only"
-	@echo "  docker-build  - Build Docker images only"
-	@echo "  load-kind     - Load Docker images into KIND cluster"
-	@echo "  k8s-deploy    - Deploy to Kubernetes"
-	@echo "  k8s-delete    - Delete from Kubernetes"
-	@echo "  k8s-status    - Show Kubernetes pod/service status"
-	@echo "  test          - Run tests"
-	@echo "  coverage      - Run tests with coverage"
-	@echo "  clean         - Remove build artifacts"
+	@echo "  kind-setup         - Create KIND cluster, build, load images, copy CSV, deploy (full setup)"
+	@echo "  kind-delete        - Delete KIND cluster"
+	@echo "  build              - Build Go binaries only"
+	@echo "  docker-build       - Build Docker images only"
+	@echo "  load-kind          - Load Docker images into KIND cluster"
+	@echo "  k8s-deploy         - Deploy to Kubernetes"
+	@echo "  k8s-delete         - Delete from Kubernetes"
+	@echo "  k8s-status        - Show Kubernetes pod/service status"
+	@echo "  test               - Run unit tests"
+	@echo "  coverage           - Run tests with coverage"
+	@echo "  integration-test   - Run integration tests (requires deployed system)"
+	@echo "  integration-test-kind - Deploy to KIND and run integration tests"
+	@echo "  helm-install       - Install using Helm charts"
+	@echo "  helm-upgrade       - Upgrade Helm deployment"
+	@echo "  helm-uninstall     - Uninstall Helm deployment"
+	@echo "  helm-template      - Render Helm templates (for debugging)"
+	@echo "  clean              - Remove build artifacts"
 	@echo ""

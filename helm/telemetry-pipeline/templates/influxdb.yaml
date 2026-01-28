@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pvc
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.influxdb.pvc.size | default "5Gi" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: influxdb
+spec:
+  replicas: {{ .Values.influxdb.replicaCount }}
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+        - name: influxdb
+          image: "{{ .Values.influxdb.image.repository }}:{{ .Values.influxdb.image.tag }}"
+          ports:
+            - containerPort: 8086
+          env:
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              value: "setup"
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              value: {{ .Values.influxdb.init.username | quote }}
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gpu-telemetry-secret
+                  key: INFLUXDB_PASSWORD
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_ORG
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: INFLUXDB_BUCKET
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gpu-telemetry-secret
+                  key: INFLUXDB_TOKEN
+          volumeMounts:
+            - name: influxdb-data
+              mountPath: /var/lib/influxdb2
+          resources:
+            {{- toYaml .Values.influxdb.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: {{ .Values.influxdb.probes.readiness.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .Values.influxdb.probes.readiness.periodSeconds | default 5 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: {{ .Values.influxdb.probes.liveness.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .Values.influxdb.probes.liveness.periodSeconds | default 10 }}
+      volumes:
+        - name: influxdb-data
+          persistentVolumeClaim:
+            claimName: influxdb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: influxdb
+spec:
+  selector:
+    app: influxdb
+  ports:
+    - port: {{ .Values.influxdb.service.port }}
+      targetPort: 8086
+      {{- if .Values.influxdb.service.nodePort }}
+      nodePort: {{ .Values.influxdb.service.nodePort }}
+      {{- end }}
+  type: {{ .Values.influxdb.service.type }}

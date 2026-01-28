@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamer
+  namespace: {{ .Values.namespace | default "gpu-telemetry" }}
+  labels:
+    app: streamer
+spec:
+  replicas: {{ .Values.streamer.replicaCount }}
+  selector:
+    matchLabels:
+      app: streamer
+  template:
+    metadata:
+      labels:
+        app: streamer
+    spec:
+      containers:
+        - name: streamer
+          image: "{{ .Values.streamer.image.repository }}:{{ .Values.streamer.image.tag }}"
+          imagePullPolicy: {{ .Values.streamer.image.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: MQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_HOST
+            - name: MQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: MQ_PORT
+            - name: CSV_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: CSV_PATH
+            - name: BATCH_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: BATCH_SIZE
+            - name: COLLECT_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: gpu-telemetry-config
+                  key: COLLECT_INTERVAL
+            - name: INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: telemetry-data
+              mountPath: /data
+              readOnly: true
+          resources:
+            {{- toYaml .Values.streamer.resources | nindent 12 }}
+      volumes:
+        - name: telemetry-data
+          hostPath:
+            path: {{ .Values.streamer.csvHostPath | default "/data" }}
+            type: Directory

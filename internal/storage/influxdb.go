@@ -156,8 +156,13 @@ func (s *InfluxDBStorage) GetTelemetry(ctx context.Context, query *models.Teleme
 	fluxQuery += `|> sort(columns: ["_time"], desc: true)`
 
 	// Apply offset and limit
+	// Note: In Flux, we need to handle offset by skipping records
+	// Since we want the most recent records first (desc order), we:
+	// 1. Sort descending
+	// 2. Skip offset records
+	// 3. Take limit records
 	if query.Offset > 0 {
-		fluxQuery += fmt.Sprintf(`|> tail(n: %d)`, query.Offset)
+		fluxQuery += fmt.Sprintf(`|> skip(n: %d)`, query.Offset)
 	}
 	if query.Limit > 0 {
 		fluxQuery += fmt.Sprintf(`|> limit(n: %d)`, query.Limit)

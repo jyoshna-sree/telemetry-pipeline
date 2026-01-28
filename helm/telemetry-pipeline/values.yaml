@@ -1,0 +1,143 @@
+# Default values for telemetry-pipeline.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: gpu-telemetry
+
+# API Gateway Configuration
+api:
+  replicaCount: 1
+  image:
+    repository: gpu-telemetry-pipeline/api
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 8080
+    nodePort: 30080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  probes:
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 5
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+
+# Collector Configuration
+collector:
+  replicaCount: 1
+  image:
+    repository: gpu-telemetry-pipeline/collector
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Message Queue Server Configuration
+mqServer:
+  replicaCount: 1
+  image:
+    repository: gpu-telemetry-pipeline/mq-server
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  bufferSize: "10000"
+  service:
+    type: ClusterIP
+    tcpPort: 9000
+    httpPort: 9001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  probes:
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 5
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+
+# Streamer Configuration
+streamer:
+  replicaCount: 1
+  image:
+    repository: gpu-telemetry-pipeline/streamer
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  csvHostPath: /data
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# InfluxDB Configuration
+influxdb:
+  replicaCount: 1
+  image:
+    repository: influxdb
+    tag: 2.7
+    pullPolicy: IfNotPresent
+  pvc:
+    size: 5Gi
+  init:
+    username: admin
+  secret:
+    token: "my-super-secret-token"
+    password: "adminpassword"
+  service:
+    type: NodePort
+    port: 8086
+    nodePort: 30086
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  probes:
+    readiness:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    liveness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+
+# Configuration Map Values
+config:
+  influxdb:
+    url: "http://influxdb:8086"
+    org: "cisco"
+    bucket: "gpu_telemetry"
+  mq:
+    host: "mq-server"
+    port: "9000"
+  api:
+    ginMode: "release"
+    storageType: "influxdb"
+    maxPageSize: "1000"
+  streamer:
+    batchSize: "100"
+    collectInterval: "5s"
+    csvPath: "/data/dcgm_metrics.csv"
+  collector:
+    flushInterval: "10s"
+    retentionPeriod: "120h"
