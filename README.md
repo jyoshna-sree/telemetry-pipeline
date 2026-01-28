@@ -78,8 +78,10 @@ The Helm charts include:
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| API Swagger UI | http://localhost:30080/swagger/index.html | Interactive API docs |
+| API Swagger UI | http://localhost:30080/swagger/ | Interactive API docs & testing |
 | API Health | http://localhost:30080/health | Health check |
+| API Stats | http://localhost:30080/api/v1/stats | System statistics |
+| List GPUs | http://localhost:30080/api/v1/gpus | Get all GPU UUIDs |
 | InfluxDB UI | http://localhost:30086 | InfluxDB dashboard |
 
 **InfluxDB Credentials:**
@@ -288,11 +290,25 @@ Subscribes to MQ and persists telemetry data to InfluxDB:
 ### 4. API Gateway (`cmd/api`)
 
 REST API for querying telemetry data with auto-generated Swagger documentation:
-- List all GPUs with pagination
-- Get GPU details by ID
-- Query telemetry with time filters
+
+**Available Endpoints:**
+- `GET /api/v1/gpus` - List all GPUs with pagination
+- `GET /api/v1/gpus/{id}` - Get GPU details by ID (model, hostname, first/last seen)
+- `GET /api/v1/gpus/{id}/metrics` - List available metric names for a specific GPU
+- `GET /api/v1/gpus/{id}/telemetry` - Query telemetry data with filters (time range, metric name, pagination)
+- `GET /api/v1/gpus/{id}/telemetry/export` - Export telemetry data in JSON or CSV format
+- `GET /api/v1/metrics` - List all available metric types across the system
+- `GET /api/v1/stats` - Get system statistics (total GPUs, metric counts)
+- `GET /health` - Health check endpoint
+- `GET /ready` - Readiness check endpoint
+- `GET /swagger/` - Interactive Swagger UI documentation
+
+**Features:**
 - Supports both in-memory storage (for development) and InfluxDB (for production)
-- Health and statistics endpoints
+- Export telemetry data in JSON or CSV format for analysis
+- Time-based filtering with RFC3339 timestamps
+- Pagination support for large datasets
+- Interactive API testing via Swagger UI
 
 ### 5. CSV Data File
 

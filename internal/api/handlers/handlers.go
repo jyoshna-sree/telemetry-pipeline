@@ -395,14 +395,15 @@ func (h *Handler) ListAllMetrics(w http.ResponseWriter, r *http.Request) {
 // @Summary      Export GPU telemetry data
 // @Description  Exports telemetry data for a specific GPU in CSV or JSON format
 // @Tags         gpus
-// @Produce      csv,json
+// @Produce      plain
+// @Produce      json
 // @Param        id          path      string  true   "GPU UUID"
 // @Param        format      query     string  false  "Output format (csv or json)"    default(json)  enum(csv,json)
 // @Param        start_time  query     string  false  "Start time filter (RFC3339)"  example(2024-01-01T00:00:00Z)
 // @Param        end_time    query     string  false  "End time filter (RFC3339)"    example(2024-01-02T00:00:00Z)
 // @Param        limit       query     int     false  "Maximum results"              default(10000)
 // @Param        offset      query     int     false  "Offset for pagination"        default(0)
-// @Success      200  {file}    string  "Telemetry data in specified format"
+// @Success      200  {string}    string  "Telemetry data in specified format"
 // @Failure      400  {object}  ErrorResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /api/v1/gpus/{id}/telemetry/export [get]

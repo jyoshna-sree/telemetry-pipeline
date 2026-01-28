@@ -282,6 +282,10 @@ func (q *InMemoryQueue) Subscribe(ctx context.Context, subscriberID string, star
 
 	// Start consumer goroutine for this subscriber
 	q.wg.Add(1)
+	select {
+	case sub.notify <- struct{}{}:
+	default:
+	}
 	go q.consumeLoop(sub)
 
 	return nil
