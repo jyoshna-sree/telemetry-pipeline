@@ -255,7 +255,8 @@ Integration tests verify the complete pipeline end-to-end:
 - System statistics
 - Error handling
 
-Tests are available in both bash (tests/integration_test.sh) and PowerShell (tests/integration_test.ps1) formats. Test reports can be found at [API_TEST_DETAILED_RESULTS.md](./API_TEST_DETAILED_RESULTS.md).
+(Tests are available in both bash (tests/integration_test.sh) and PowerShell (tests/integration_test.ps1) formats. Test reports can be found at [API_TEST_DETAILED_RESULTS.md](./API_TEST_DETAILED_RESULTS.md).)
+
 ---
 
 ## Components
