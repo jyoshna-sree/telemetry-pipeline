@@ -2,6 +2,7 @@
 
 An in-memory message queue system where streamers periodically publish telemetry data and collectors consume and persist it to InfluxDB. Includes a REST API for querying telemetry data.
 
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
@@ -182,7 +183,7 @@ Golang, InfluxDB, Docker, Kubernetes.
 ```
 
 ### Data Flow
-
+(For a detailed explanation of how GPU metrics move through the telemetry pipeline, see [DATA_FLOW.md](./DATA_FLOW.md).)
 1. **CSV File** is stored on the KIND cluster node at `/data/dcgm_metrics.csv` (mounted as hostPath volume)
 2. **Telemetry Streamers** (1 or more pods) all read GPU metrics from the same shared CSV file.
 3. Each streamer collects metrics locally in a buffer for a configurable interval (default: 5s)
@@ -256,6 +257,7 @@ Integration tests verify the complete pipeline end-to-end:
 
 Tests are available in both bash (`tests/integration_test.sh`) and PowerShell (`tests/integration_test.ps1`) formats.
 
+Test reports can be found at [API_TEST_DETAILED_RESULTS.md](./API_TEST_DETAILED_RESULTS.md).
 ---
 
 ## Components
